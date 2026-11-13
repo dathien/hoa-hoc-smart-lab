@@ -1,0 +1,118 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default-deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().role == 'ADMIN')
+      );
+    }
+
+    function isTeacher() {
+      return isSignedIn() && (
+        isAdmin() ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         (getUserData().role == 'TEACHER' || getUserData().role == 'DEPARTMENT_HEAD'))
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // 1. Users Collection
+    match /users/{userId} {
+      allow get: if isSignedIn() && (request.auth.uid == userId || isTeacher());
+      allow list: if isTeacher();
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isSignedIn() && (request.auth.uid == userId || isAdmin()) &&
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']);
+      allow delete: if isAdmin();
+    }
+
+    // 2. Classrooms
+    match /classes/{classId} {
+      allow read: if isSignedIn();
+      allow write: if isTeacher();
+
+      match /students/{studentId} {
+        allow read: if isSignedIn();
+        allow write: if isTeacher();
+      }
+    }
+
+    // 3. Question Bank
+    match /questions/{questionId} {
+      allow read: if isSignedIn();
+      allow write: if isTeacher();
+    }
+
+    // 4. Exams
+    match /exams/{examId} {
+      allow read: if isSignedIn();
+      allow write: if isTeacher();
+    }
+
+    // 5. Submissions
+    match /submissions/{submissionId} {
+      allow get: if isSignedIn() && (
+        isTeacher() ||
+        resource.data.studentId == request.auth.uid
+      );
+      allow list: if isSignedIn() && (
+        isTeacher() ||
+        resource.data.studentId == request.auth.uid
+      );
+      allow create: if isSignedIn() && request.resource.data.studentId == request.auth.uid;
+      allow update: if isTeacher();
+      allow delete: if isAdmin();
+    }
+
+    // 6. Internal Grading Records - STRICT ZERO-TRUST: TEACHER & ADMIN ONLY
+    // Students and Parents have NO read or write access whatsoever!
+    match /gradingRecords/{recordId} {
+      allow read, write: if isTeacher();
+    }
+
+    // 7. Published Results - Legally released grades for students and verified parents
+    match /publishedResults/{resultId} {
+      allow get: if isSignedIn() && (
+        isTeacher() ||
+        resource.data.studentId == request.auth.uid ||
+        (getUserData().role == 'PARENT' && getUserData().linkedStudentId == resource.data.studentId)
+      );
+      allow list: if isSignedIn() && (
+        isTeacher() ||
+        resource.data.studentId == request.auth.uid ||
+        (getUserData().role == 'PARENT' && getUserData().linkedStudentId == resource.data.studentId)
+      );
+      allow write: if isTeacher();
+    }
+
+    // 8. Hero Cards & Fusions
+    match /heroCards/{cardId} {
+      allow read: if isSignedIn();
+      allow write: if isTeacher();
+    }
+
+    match /fusionReactions/{fusionId} {
+      allow read: if isSignedIn();
+      allow write: if isTeacher();
+    }
+  }
+}

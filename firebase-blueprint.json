@@ -1,0 +1,205 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User account and role information",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 150 },
+        "email": { "type": "string", "maxLength": 200 },
+        "role": { "type": "string", "enum": ["ADMIN", "DEPARTMENT_HEAD", "TEACHER", "STUDENT", "PARENT"] },
+        "assignedClassIds": { "type": "array" },
+        "linkedStudentId": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["id", "name", "email", "role"]
+    },
+    "Classroom": {
+      "title": "Classroom",
+      "description": "High school chemistry classroom",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "name": { "type": "string", "maxLength": 64 },
+        "grade": { "type": "number" },
+        "homeroomTeacherId": { "type": "string", "maxLength": 128 },
+        "chemistryTeacherId": { "type": "string", "maxLength": 128 },
+        "studentCount": { "type": "number" }
+      },
+      "required": ["id", "name", "grade", "chemistryTeacherId"]
+    },
+    "Student": {
+      "title": "Student",
+      "description": "Student profile with unique studentCode and classroom",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "studentCode": { "type": "string", "maxLength": 64 },
+        "fullName": { "type": "string", "maxLength": 150 },
+        "classId": { "type": "string", "maxLength": 64 },
+        "className": { "type": "string", "maxLength": 64 },
+        "gender": { "type": "string", "enum": ["Nam", "Nữ"] },
+        "dob": { "type": "string", "maxLength": 32 },
+        "status": { "type": "string", "enum": ["ACTIVE", "TRANSFERRED", "ARCHIVED"] }
+      },
+      "required": ["id", "studentCode", "fullName", "classId", "status"]
+    },
+    "Question": {
+      "title": "Question",
+      "description": "Chemistry question bank item",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "type": { "type": "string", "enum": ["MCQ", "MULTIPLE_TRUE_FALSE", "SHORT_ANSWER", "ESSAY"] },
+        "grade": { "type": "number" },
+        "chapter": { "type": "string", "maxLength": 200 },
+        "topic": { "type": "string", "maxLength": 200 },
+        "content": { "type": "string", "maxLength": 4000 },
+        "cognitiveLevel": { "type": "string", "enum": ["NHAN_BIET", "THONG_HIEU", "VAN_DUNG", "VAN_DUNG_CAO"] },
+        "maxScore": { "type": "number" },
+        "authorId": { "type": "string", "maxLength": 128 }
+      },
+      "required": ["id", "type", "grade", "content", "maxScore", "authorId"]
+    },
+    "Exam": {
+      "title": "Exam",
+      "description": "Exam and assessment specification with immediate score toggle",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "title": { "type": "string", "maxLength": 255 },
+        "grade": { "type": "number" },
+        "type": { "type": "string", "enum": ["15_MIN", "30_MIN", "45_MIN", "MID_TERM", "FINAL_TERM", "THPT_PRACTICE", "HOMEWORK"] },
+        "durationMinutes": { "type": "number" },
+        "assignedClassIds": { "type": "array" },
+        "questionIds": { "type": "array" },
+        "totalScore": { "type": "number" },
+        "allowShowScoreImmediately": { "type": "boolean" },
+        "allowShowAnswers": { "type": "boolean" },
+        "allowShowExplanations": { "type": "boolean" },
+        "status": { "type": "string", "enum": ["DRAFT", "ACTIVE", "CLOSED"] },
+        "createdBy": { "type": "string", "maxLength": 128 }
+      },
+      "required": ["id", "title", "grade", "durationMinutes", "allowShowScoreImmediately", "status", "createdBy"]
+    },
+    "Submission": {
+      "title": "Submission",
+      "description": "Student work submission record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "examId": { "type": "string", "maxLength": 64 },
+        "studentId": { "type": "string", "maxLength": 64 },
+        "studentName": { "type": "string", "maxLength": 150 },
+        "classId": { "type": "string", "maxLength": 64 },
+        "submittedAt": { "type": "string", "maxLength": 64 },
+        "submissionStatus": { "type": "string", "enum": ["SUBMITTED", "AUTO_GRADED", "NEEDS_REVIEW", "GRADED", "APPROVED"] },
+        "publishStatus": { "type": "string", "enum": ["HIDDEN", "PUBLISHED", "CORRECTION_PENDING"] }
+      },
+      "required": ["id", "examId", "studentId", "classId", "submissionStatus", "publishStatus"]
+    },
+    "GradingRecord": {
+      "title": "GradingRecord",
+      "description": "Internal grading record with teacher reviews and audit logs - RESTRICTED TO TEACHER/ADMIN ONLY",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "submissionId": { "type": "string", "maxLength": 64 },
+        "examId": { "type": "string", "maxLength": 64 },
+        "studentId": { "type": "string", "maxLength": 64 },
+        "autoGradedScore": { "type": "number" },
+        "finalScore": { "type": "number" },
+        "teacherFeedback": { "type": "string", "maxLength": 3000 },
+        "gradedBy": { "type": "string", "maxLength": 128 },
+        "adjustmentLogs": { "type": "array" }
+      },
+      "required": ["id", "submissionId", "examId", "studentId"]
+    },
+    "PublishedResult": {
+      "title": "PublishedResult",
+      "description": "Publicly released exam result accessible to student and linked parent",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "submissionId": { "type": "string", "maxLength": 64 },
+        "examId": { "type": "string", "maxLength": 64 },
+        "studentId": { "type": "string", "maxLength": 64 },
+        "score": { "type": "number" },
+        "feedback": { "type": "string", "maxLength": 1000 },
+        "publishedAt": { "type": "string", "maxLength": 64 },
+        "publishedBy": { "type": "string", "maxLength": 128 }
+      },
+      "required": ["id", "submissionId", "examId", "studentId", "score", "publishedAt"]
+    },
+    "HeroCard": {
+      "title": "HeroCard",
+      "description": "Chemical element and compound fantasy warrior card with 3D model link",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "characterName": { "type": "string", "maxLength": 150 },
+        "chemicalName": { "type": "string", "maxLength": 150 },
+        "formula": { "type": "string", "maxLength": 64 },
+        "rarity": { "type": "string", "enum": ["Phổ biến", "Hiếm", "Sử thi", "Huyền thoại"] },
+        "molecular3DModel": { "type": "string", "maxLength": 32 }
+      },
+      "required": ["id", "characterName", "chemicalName", "formula", "molecular3DModel"]
+    },
+    "FusionReaction": {
+      "title": "FusionReaction",
+      "description": "Scientifically verified chemical fusion reaction rule",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "reactant1Id": { "type": "string", "maxLength": 64 },
+        "reactant2Id": { "type": "string", "maxLength": 64 },
+        "productCardId": { "type": "string", "maxLength": 64 },
+        "equation": { "type": "string", "maxLength": 255 },
+        "conditions": { "type": "string", "maxLength": 255 }
+      },
+      "required": ["id", "reactant1Id", "reactant2Id", "productCardId", "equation"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Registered user accounts and roles"
+    },
+    "/classes/{classId}": {
+      "schema": "Classroom",
+      "description": "Classrooms managed by chemistry teachers"
+    },
+    "/classes/{classId}/students/{studentId}": {
+      "schema": "Student",
+      "description": "Students enrolled in specific classroom"
+    },
+    "/questions/{questionId}": {
+      "schema": "Question",
+      "description": "Chemistry question bank items"
+    },
+    "/exams/{examId}": {
+      "schema": "Exam",
+      "description": "Exam definitions and delivery settings"
+    },
+    "/submissions/{submissionId}": {
+      "schema": "Submission",
+      "description": "Student work submissions and statuses"
+    },
+    "/gradingRecords/{recordId}": {
+      "schema": "GradingRecord",
+      "description": "Internal teacher grading and adjustment logs"
+    },
+    "/publishedResults/{resultId}": {
+      "schema": "PublishedResult",
+      "description": "Released grades readable by authorized student and parent"
+    },
+    "/heroCards/{cardId}": {
+      "schema": "HeroCard",
+      "description": "Chemical hero cards"
+    },
+    "/fusionReactions/{fusionId}": {
+      "schema": "FusionReaction",
+      "description": "Reaction fusion formulas"
+    }
+  }
+}
