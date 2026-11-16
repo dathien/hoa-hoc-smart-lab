@@ -90,3 +90,69 @@ export interface LabPreset {
   }[];
   shouldHeat?: boolean;
 }
+
+export const LAB2D_WORLD = {
+  WIDTH: 900,
+  HEIGHT: 480,
+  BENCH_SURFACE_Y: 365,
+  DEFAULT_Y: 162,
+  MARGIN_X: 36,
+  MARGIN_TOP: 64,
+  MARGIN_BOTTOM: 18,
+} as const;
+
+// Complete local bounding box around every 2D vessel (includes top badges, mist, selection ring, bottom label)
+export const VESSEL_BOUNDS = {
+  MIN_X: -12,
+  MAX_X: 122, // width = 134 (centered around local x = 55)
+  MIN_Y: -54, // top mist & badges headroom
+  MAX_Y: 244, // bottom nameplate bottom + shadow
+} as const;
+
+export const clamp2DPosition = (x: number, y: number): { x: number; y: number } => {
+  const minX = LAB2D_WORLD.MARGIN_X - VESSEL_BOUNDS.MIN_X;
+  const maxX = LAB2D_WORLD.WIDTH - LAB2D_WORLD.MARGIN_X - VESSEL_BOUNDS.MAX_X;
+  const minY = LAB2D_WORLD.MARGIN_TOP - VESSEL_BOUNDS.MIN_Y;
+  const maxY = LAB2D_WORLD.HEIGHT - LAB2D_WORLD.MARGIN_BOTTOM - VESSEL_BOUNDS.MAX_Y;
+
+  return {
+    x: Math.round(Math.max(minX, Math.min(maxX, x))),
+    y: Math.round(Math.max(minY, Math.min(maxY, y))),
+  };
+};
+
+export const computeAutoLayoutContainers = (
+  items: ApparatusInstance[]
+): ApparatusInstance[] => {
+  const count = items.length;
+  if (count === 0) return items;
+
+  const vesselWidth = VESSEL_BOUNDS.MAX_X - VESSEL_BOUNDS.MIN_X; // 134
+  const vesselCenterOffset = (VESSEL_BOUNDS.MIN_X + VESSEL_BOUNDS.MAX_X) / 2; // 55
+  const centerWorldX = LAB2D_WORLD.WIDTH / 2;
+
+  if (count === 1) {
+    const pos = clamp2DPosition(centerWorldX - vesselCenterOffset, LAB2D_WORLD.DEFAULT_Y);
+    return [{ ...items[0], x: pos.x, y: pos.y }];
+  }
+
+  const usableLeft = LAB2D_WORLD.MARGIN_X - VESSEL_BOUNDS.MIN_X;
+  const usableRight = LAB2D_WORLD.WIDTH - LAB2D_WORLD.MARGIN_X - VESSEL_BOUNDS.MAX_X;
+  const maxSpan = usableRight - usableLeft;
+  const idealStep = count <= 3 ? 215 : count === 4 ? 185 : Math.min(165, maxSpan / (count - 1));
+  const totalSpan = Math.min(maxSpan, idealStep * (count - 1));
+  const step = Math.max(vesselWidth + 4, totalSpan / (count - 1));
+  const actualSpan = Math.min(maxSpan, step * (count - 1));
+  const startCenterX = centerWorldX - actualSpan / 2;
+
+  return items.map((item, index) => {
+    const targetX = startCenterX + index * (actualSpan / (count - 1)) - vesselCenterOffset;
+    const pos = clamp2DPosition(targetX, LAB2D_WORLD.DEFAULT_Y);
+    return {
+      ...item,
+      x: pos.x,
+      y: pos.y,
+    };
+  });
+};
+

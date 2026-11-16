@@ -8,6 +8,8 @@ import {
   Reagent,
   LabPreset,
   hexToColorString,
+  computeAutoLayoutContainers,
+  clamp2DPosition,
 } from './labTypes';
 import {
   REAGENTS_DATA,
@@ -98,41 +100,43 @@ export const Lab3D: React.FC = () => {
   const [selectedGrade, setSelectedGrade] = useState<number | 'all'>('all');
 
   // Apparatuses currently on workbench (synchronized between 2D and 3D)
-  const [containers, setContainers] = useState<ApparatusInstance[]>([
-    {
-      id: 'tube_1',
-      type: 'test_tube',
-      name: 'Ống nghiệm 1',
-      capacity: 25,
-      x: 140,
-      y: 190,
-      addedReagents: [],
-      temperature: 25,
-      isHeated: false,
-    },
-    {
-      id: 'beaker_1',
-      type: 'beaker_100',
-      name: 'Cốc mỏ 100 mL',
-      capacity: 100,
-      x: 320,
-      y: 180,
-      addedReagents: [],
-      temperature: 25,
-      isHeated: false,
-    },
-    {
-      id: 'tube_2',
-      type: 'test_tube',
-      name: 'Ống nghiệm 2',
-      capacity: 25,
-      x: 500,
-      y: 190,
-      addedReagents: [],
-      temperature: 25,
-      isHeated: false,
-    },
-  ]);
+  const [containers, setContainers] = useState<ApparatusInstance[]>(() =>
+    computeAutoLayoutContainers([
+      {
+        id: 'tube_1',
+        type: 'test_tube',
+        name: 'Ống nghiệm 1',
+        capacity: 25,
+        x: 160,
+        y: 162,
+        addedReagents: [],
+        temperature: 25,
+        isHeated: false,
+      },
+      {
+        id: 'beaker_1',
+        type: 'beaker_100',
+        name: 'Cốc mỏ 100 mL',
+        capacity: 100,
+        x: 395,
+        y: 162,
+        addedReagents: [],
+        temperature: 25,
+        isHeated: false,
+      },
+      {
+        id: 'tube_2',
+        type: 'test_tube',
+        name: 'Ống nghiệm 2',
+        capacity: 25,
+        x: 630,
+        y: 162,
+        addedReagents: [],
+        temperature: 25,
+        isHeated: false,
+      },
+    ])
+  );
 
   const [activeContainerId, setActiveContainerId] = useState<string>('tube_1');
   const [selectedReagentId, setSelectedReagentId] = useState<string>('bacl2');
@@ -204,6 +208,15 @@ export const Lab3D: React.FC = () => {
     if (selectedReagent.mass) setParamMass(selectedReagent.mass);
   }, [selectedReagentId]);
 
+  // Sync fullscreen state with browser ESC key exit
+  useEffect(() => {
+    const onFullscreenChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    };
+    document.addEventListener('fullscreenchange', onFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
+  }, []);
+
   // Fullscreen Handler
   const handleToggleFullscreen = () => {
     const el = workbenchContainerRef.current;
@@ -220,7 +233,7 @@ export const Lab3D: React.FC = () => {
     }
   };
 
-  // 1. ADD APPARATUS TO WORKBENCH
+  // 1. ADD APPARATUS TO WORKBENCH (auto-distributes cleanly across bench)
   const handleAddApparatus = (item: ApparatusPaletteItem) => {
     if (containers.length >= 6) {
       showNotice('Bàn thực hành đã đầy tối đa 6 dụng cụ. Hãy xóa bớt trước khi thêm mới.');
@@ -229,31 +242,34 @@ export const Lab3D: React.FC = () => {
 
     const nextIndex = containers.length + 1;
     const newId = `${item.type}_${Date.now()}`;
-    const newX = 80 + (containers.length % 4) * 160;
-    const newY = 170 + Math.floor(containers.length / 4) * 30;
 
     const newInstance: ApparatusInstance = {
       id: newId,
       type: item.type,
       name: `${item.label} ${nextIndex}`,
       capacity: item.defaultCapacity,
-      x: newX,
-      y: newY,
+      x: 395,
+      y: 162,
       addedReagents: [],
       temperature: 25,
       isHeated: false,
     };
 
-    setContainers((prev) => [...prev, newInstance]);
+    setContainers((prev) => computeAutoLayoutContainers([...prev, newInstance]));
     setActiveContainerId(newId);
     showNotice(`Đã đặt ${newInstance.name} lên bàn thực hành.`);
   };
 
-  // 2. UPDATE APPARATUS POSITION (Drag)
+  // 2. UPDATE APPARATUS POSITION (Clamped Drag)
   const handleUpdatePosition = (id: string, x: number, y: number) => {
+    const clamped = clamp2DPosition(x, y);
     setContainers((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, x, y } : c))
+      prev.map((c) => (c.id === id ? { ...c, x: clamped.x, y: clamped.y } : c))
     );
+  };
+
+  const handleResetLayout = () => {
+    setContainers((prev) => computeAutoLayoutContainers(prev));
   };
 
   // 3. REMOVE APPARATUS
@@ -426,7 +442,7 @@ export const Lab3D: React.FC = () => {
       isHeated: Boolean(preset.shouldHeat),
     };
 
-    setContainers([targetApparatus]);
+    setContainers(computeAutoLayoutContainers([targetApparatus]));
     setActiveContainerId(targetId);
     setShowScientificExplanation(false); // Hide explanation initially so students predict first!
     showNotice(`Đã nạp thí nghiệm GDPT 2018: "${preset.title}".`, 3000);
@@ -434,30 +450,32 @@ export const Lab3D: React.FC = () => {
 
   // 10. RESET ALL BENCH
   const handleResetAll = () => {
-    setContainers([
-      {
-        id: 'tube_1',
-        type: 'test_tube',
-        name: 'Ống nghiệm 1',
-        capacity: 25,
-        x: 180,
-        y: 190,
-        addedReagents: [],
-        temperature: 25,
-        isHeated: false,
-      },
-      {
-        id: 'beaker_1',
-        type: 'beaker_100',
-        name: 'Cốc mỏ 100 mL',
-        capacity: 100,
-        x: 360,
-        y: 180,
-        addedReagents: [],
-        temperature: 25,
-        isHeated: false,
-      },
-    ]);
+    setContainers(
+      computeAutoLayoutContainers([
+        {
+          id: 'tube_1',
+          type: 'test_tube',
+          name: 'Ống nghiệm 1',
+          capacity: 25,
+          x: 240,
+          y: 162,
+          addedReagents: [],
+          temperature: 25,
+          isHeated: false,
+        },
+        {
+          id: 'beaker_1',
+          type: 'beaker_100',
+          name: 'Cốc mỏ 100 mL',
+          capacity: 100,
+          x: 520,
+          y: 162,
+          addedReagents: [],
+          temperature: 25,
+          isHeated: false,
+        },
+      ])
+    );
     setActiveContainerId('tube_1');
     showNotice('Đã đặt lại toàn bộ bàn thí nghiệm về trạng thái ban đầu.');
   };
@@ -482,7 +500,7 @@ export const Lab3D: React.FC = () => {
     <div
       ref={workbenchContainerRef}
       className={`space-y-4 max-w-7xl mx-auto font-sans transition-colors ${
-        isFullscreen ? 'bg-slate-950 p-6 text-white min-h-screen overflow-y-auto' : ''
+        isFullscreen ? 'bg-slate-950 p-4 sm:p-6 min-h-screen overflow-y-auto' : ''
       }`}
     >
       {/* 1. TOP HEADER & PEDAGOGICAL CONTROL BAR */}
@@ -743,13 +761,13 @@ export const Lab3D: React.FC = () => {
         </div>
       </div>
 
-      {/* 3. MAIN WORKBENCH GRID: (2D/3D Canvas + Reagent Tray) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-        {/* Left Column (7 cols): Interactive Workbench Canvas (2D or 3D) */}
-        <div className="lg:col-span-7 space-y-4">
+      {/* 3. MAIN WORKBENCH GRID: (66.7% 2D/3D Canvas + 33.3% Reagent Tray on Desktop) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+        {/* Left Column (8 cols ~66.7%): Interactive Workbench Canvas (2D or 3D) */}
+        <div className="lg:col-span-8 space-y-4 min-w-0">
           <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
             {/* Top Toolbar of Canvas: Current active container selector buttons */}
-            <div className="p-3.5 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2.5">
+            <div className="p-3 sm:p-3.5 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2.5">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-sm font-bold text-slate-700">Dụng cụ đang chọn:</span>
                 <div className="flex flex-wrap gap-1.5">
@@ -778,7 +796,7 @@ export const Lab3D: React.FC = () => {
             </div>
 
             {/* Canvas Area: Toggle between 2D SVG Canvas and 3D WebGL Canvas */}
-            <div className="p-2 sm:p-3 bg-slate-950">
+            <div className="p-2 sm:p-2.5 bg-slate-950">
               {labMode === '2D' ? (
                 <LabApparatus2D
                   containers={containers}
@@ -790,18 +808,26 @@ export const Lab3D: React.FC = () => {
                   onToggleHeater={handleToggleHeater}
                   onShakeContainer={handleShakeContainer}
                   onDipLitmus={handleDipLitmus}
+                  onResetLayout={handleResetLayout}
                   isPouring={isPouring}
                   pouringReagent={pouringReagent}
                   analyses={analyses}
+                  isFullscreen={isFullscreen}
                 />
               ) : (
                 <Lab3DView
                   containers={containers}
                   activeContainerId={activeContainerId}
                   onSelectContainer={(id) => setActiveContainerId(id)}
+                  onRemoveContainer={handleRemoveContainer}
+                  onWashContainer={handleWashContainer}
+                  onToggleHeater={handleToggleHeater}
+                  onShakeContainer={handleShakeContainer}
+                  onDipLitmus={handleDipLitmus}
                   analyses={analyses}
                   isPouring={isPouring}
                   pouringReagent={pouringReagent}
+                  isFullscreen={isFullscreen}
                 />
               )}
             </div>
@@ -924,8 +950,8 @@ export const Lab3D: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Column (5 cols): Reagent Tray, Search, Parameters & Add Actions */}
-        <div className="lg:col-span-5 space-y-4">
+        {/* Right Column (4 cols ~33.3%): Reagent Tray, Search, Parameters & Add Actions */}
+        <div className="lg:col-span-4 space-y-4 min-w-0">
           <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="text-lg sm:text-xl font-black text-slate-900 flex items-center gap-2">
