@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useChemStore } from '../../services/store';
+import { ContextualGuideButton } from '../../services/guideContext';
 import { ExamVariant, Question } from '../../types/chem';
 import {
   QUESTION_TYPE_LABELS,
@@ -171,17 +172,24 @@ export const ExamShuffleManager: React.FC<ExamShuffleManagerProps> = ({
           </div>
         </div>
 
-        <select
-          value={selectedExam.id}
-          onChange={(e) => setSelectedExamId(e.target.value)}
-          className="px-3.5 py-2 text-sm font-bold bg-slate-50 border border-slate-300 rounded-xl min-h-[44px] max-w-md"
-        >
-          {exams.map((ex) => (
-            <option key={ex.id} value={ex.id}>
-              [Khối {ex.grade}] {ex.title} ({ex.variants?.length || 0} mã đề)
-            </option>
-          ))}
-        </select>
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            value={selectedExam.id}
+            onChange={(e) => setSelectedExamId(e.target.value)}
+            className="px-3.5 py-2 text-sm font-bold bg-slate-50 border border-slate-300 rounded-xl min-h-[44px] max-w-md"
+          >
+            {exams.map((ex) => (
+              <option key={ex.id} value={ex.id}>
+                [Khối {ex.grade}] {ex.title} ({ex.variants?.length || 0} mã đề)
+              </option>
+            ))}
+          </select>
+
+          <ContextualGuideButton
+            chapterId="ch7-question-shuffle"
+            originLabel="Trộn đề & Mã đề"
+          />
+        </div>
       </div>
 
       {selectedExam.needsResync && (

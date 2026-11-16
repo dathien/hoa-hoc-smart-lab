@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { ChemFormula } from '../common/ChemFormula';
+import { ContextualGuideButton } from '../../services/guideContext';
 import {
   ApparatusInstance,
   ApparatusType,
@@ -590,6 +591,11 @@ export const Lab3D: React.FC = () => {
                 <Maximize2 className="w-4 h-4" />
               )}
             </button>
+
+            <ContextualGuideButton
+              chapterId="ch9-lab2d3d"
+              originLabel="Phòng thí nghiệm 2D/3D"
+            />
           </div>
         </div>
 

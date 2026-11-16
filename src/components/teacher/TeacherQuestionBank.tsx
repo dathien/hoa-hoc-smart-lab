@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useChemStore } from '../../services/store';
+import { ContextualGuideButton } from '../../services/guideContext';
 import {
   CognitiveLevel,
   EssayRubricStep,
@@ -410,6 +411,11 @@ export const TeacherQuestionBank: React.FC = () => {
             <PlusCircle className="w-4 h-4" />
             <span>Thêm câu hỏi mới</span>
           </button>
+
+          <ContextualGuideButton
+            chapterId="ch7-question-shuffle"
+            originLabel="Ngân hàng câu hỏi"
+          />
         </div>
       </div>
 

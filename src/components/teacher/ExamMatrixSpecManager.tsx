@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useChemStore } from '../../services/store';
+import { ContextualGuideButton } from '../../services/guideContext';
 import {
   CognitiveLevel,
   ExamMatrix,
@@ -753,6 +754,11 @@ export const ExamMatrixSpecManager: React.FC<ExamMatrixSpecManagerProps> = ({
             <BookOpen className="w-4 h-4" />
             <span>Thư viện tham khảo ({referenceSources.length})</span>
           </button>
+
+          <ContextualGuideButton
+            chapterId="ch6-matrix"
+            originLabel="Ma trận & Bản đặc tả"
+          />
         </div>
       </div>
 

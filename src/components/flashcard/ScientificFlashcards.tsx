@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Card3DViewer } from './Card3DViewer';
 import { ChemFormula } from '../common/ChemFormula';
+import { ContextualGuideButton } from '../../services/guideContext';
 import {
   RotateCw,
   Star,
@@ -329,6 +330,11 @@ export const ScientificFlashcards: React.FC = () => {
               </button>
             ))}
           </div>
+
+          <ContextualGuideButton
+            chapterId="ch11-flashcard"
+            originLabel="Flashcard Hóa học"
+          />
         </div>
       </div>
 

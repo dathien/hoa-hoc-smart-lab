@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { FlaskConical, Droplets, BatteryCharging, Pipette, Calculator } from 'lucide-react';
+import { ContextualGuideButton } from '../../services/guideContext';
 import { Lab3D } from './Lab3D';
 import { ReactionsIonsSim } from './ReactionsIonsSim';
 import { ElectrochemistrySim } from './ElectrochemistrySim';
@@ -62,6 +63,13 @@ export const LabWorkspace: React.FC<LabWorkspaceProps> = ({
             </button>
           );
         })}
+
+        <div className="ml-auto">
+          <ContextualGuideButton
+            chapterId={activeSub === 'virtual-lab' ? 'ch9-lab2d3d' : 'ch10-sims'}
+            originLabel={LAB_SUBTABS.find((t) => t.id === activeSub)?.label || 'Phòng thực hành 2D/3D'}
+          />
+        </div>
       </div>
 
       {activeSub === 'virtual-lab' && <Lab3D />}

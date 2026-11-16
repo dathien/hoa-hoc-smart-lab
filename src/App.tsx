@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { ChemStoreProvider, useChemStore } from './services/store';
+import { GuideProvider } from './services/guideContext';
 import { Navbar } from './components/common/Navbar';
 import { Sidebar } from './components/common/Sidebar';
+import { UserGuidePage } from './components/common/UserGuidePage';
 
 // Teacher & Admin Views
 import { TeacherOverview } from './components/teacher/TeacherOverview';
@@ -56,6 +58,9 @@ const AppContent: React.FC = () => {
   const [currentTab, setCurrentTab] = useState<string>('overview');
   const [subTab, setSubTab] = useState<string>('default');
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
+  const [isGuideOpen, setIsGuideOpen] = useState<boolean>(false);
+  const [guideChapterId, setGuideChapterId] = useState<string | null>(null);
+  const [guideOriginLabel, setGuideOriginLabel] = useState<string | null>(null);
 
   // Shared cross-navigation element context (Periodic Table <-> Atom 3D <-> Encyclopedia)
   const [selectedElementZ, setSelectedElementZ] = useState<number>(11);
@@ -65,10 +70,22 @@ const AppContent: React.FC = () => {
   React.useEffect(() => {
     setCurrentTab('overview');
     setSubTab('default');
+    setIsGuideOpen(false);
   }, [activeRole]);
+
+  const openGuide = useCallback((chapterId?: string, originLabel?: string) => {
+    setGuideChapterId(chapterId || null);
+    setGuideOriginLabel(originLabel || null);
+    setIsGuideOpen(true);
+  }, []);
+
+  const closeGuide = useCallback(() => {
+    setIsGuideOpen(false);
+  }, []);
 
   // Smart navigator that handles both 8 main tabs and legacy/deep-link sub-tabs
   const navigateTo = (tab: string, sub?: string) => {
+    setIsGuideOpen(false);
     if (tab === 'overview') {
       setCurrentTab('overview');
       setSubTab('default');
@@ -660,34 +677,59 @@ const AppContent: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900">
-      {/* Top Navbar */}
-      <Navbar onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)} />
-
-      {/* Main Body */}
-      <div className="flex-1 flex overflow-hidden relative">
-        {/* Streamlined 8-Item Collapsible Sidebar */}
-        <Sidebar
-          currentTab={currentTab}
-          currentSubTab={subTab}
-          onSelectTab={(tabId, subId) => navigateTo(tabId, subId)}
-          isOpen={isSidebarOpen}
-          onCloseMobile={() => setIsSidebarOpen(false)}
+    <GuideProvider
+      value={{
+        isGuideOpen,
+        activeChapterId: guideChapterId,
+        openGuide,
+        closeGuide,
+      }}
+    >
+      <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900">
+        {/* Top Navbar */}
+        <Navbar
+          onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
+          onOpenGuide={() => (isGuideOpen ? closeGuide() : openGuide())}
+          isGuideOpen={isGuideOpen}
         />
 
-        {/* Dynamic Main Workspace */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 flex flex-col justify-between">
-          <div className="max-w-7xl mx-auto space-y-6 w-full flex-1">
-            {renderTabContent()}
-          </div>
+        {/* Main Body */}
+        <div className="flex-1 flex overflow-hidden relative">
+          {/* Streamlined 8-Item Collapsible Sidebar */}
+          <Sidebar
+            currentTab={currentTab}
+            currentSubTab={subTab}
+            onSelectTab={(tabId, subId) => navigateTo(tabId, subId)}
+            isOpen={isSidebarOpen}
+            onCloseMobile={() => setIsSidebarOpen(false)}
+          />
 
-          {/* Footer Toàn Ứng Dụng: Hiển thị thống nhất cho Giáo viên, Học sinh và Phụ huynh */}
-          <footer className="w-full mt-12 py-5 border-t border-slate-200 text-center text-[15px] md:text-[16px] text-slate-500 font-medium select-none">
-            Copyright © 2026 – Phát triển bởi Thầy Hồ Nguyễn Đa Thiện
-          </footer>
-        </main>
+          {/* Dynamic Main Workspace */}
+          <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 flex flex-col justify-between">
+            <div className="max-w-7xl mx-auto space-y-6 w-full flex-1">
+              {isGuideOpen && (
+                <UserGuidePage
+                  activeRole={activeRole}
+                  initialChapterId={guideChapterId}
+                  originLabel={guideOriginLabel}
+                  onReturnToWorkspace={closeGuide}
+                  onOpenFeature={(tab, sub) => navigateTo(tab, sub)}
+                />
+              )}
+
+              <div className={isGuideOpen ? 'hidden' : 'block'}>
+                {renderTabContent()}
+              </div>
+            </div>
+
+            {/* Footer Toàn Ứng Dụng: Hiển thị thống nhất cho Giáo viên, Học sinh và Phụ huynh */}
+            <footer className="w-full mt-12 py-5 border-t border-slate-200 text-center text-[15px] md:text-[16px] text-slate-500 font-medium select-none">
+              Copyright © 2026 – Phát triển bởi Thầy Hồ Nguyễn Đa Thiện
+            </footer>
+          </main>
+        </div>
       </div>
-    </div>
+    </GuideProvider>
   );
 };
 

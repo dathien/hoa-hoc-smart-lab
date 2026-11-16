@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { ContextualGuideButton } from '../../services/guideContext';
 import {
   ELEMENTS_118,
   CATEGORY_META,
@@ -309,6 +310,12 @@ export const PeriodicTable118: React.FC<PeriodicTable118Props> = ({
                 </>
               )}
             </button>
+
+            <ContextualGuideButton
+              chapterId="ch4-periodic"
+              originLabel="Bảng tuần hoàn 118"
+              compact
+            />
           </div>
         </div>
 

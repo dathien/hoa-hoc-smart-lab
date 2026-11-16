@@ -19,6 +19,7 @@ import {
   upgradeContentForEditorHtml,
 } from '../../utils/chemSyntax';
 import { OrganicStructure2DEditor } from './OrganicStructure2DEditor';
+import { ContextualGuideButton } from '../../services/guideContext';
 import {
   AlignCenter,
   AlignLeft,
@@ -1198,6 +1199,14 @@ export const SmartChemEditor: React.FC<SmartChemEditorProps> = ({
             <Flame className="w-3.5 h-3.5" />
             <span>Điều kiện phản ứng</span>
           </button>
+
+          <div className="ml-auto">
+            <ContextualGuideButton
+              chapterId="ch8-editor"
+              originLabel="Trình soạn thảo Hóa học"
+              compact
+            />
+          </div>
         </div>
       </div>
 

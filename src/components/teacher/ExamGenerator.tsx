@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useChemStore } from '../../services/store';
+import { ContextualGuideButton } from '../../services/guideContext';
 import {
   Exam,
   ExamMatrix,
@@ -445,6 +446,11 @@ export const ExamGenerator: React.FC<ExamGeneratorProps> = ({
               </option>
             ))}
           </select>
+
+          <ContextualGuideButton
+            chapterId="ch7-question-shuffle"
+            originLabel="Tạo đề mới"
+          />
         </div>
       </div>
 

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useChemStore } from '../../services/store';
 import {
   Bell,
+  BookOpen,
   ChevronDown,
   CheckCircle,
   Menu
@@ -9,9 +10,15 @@ import {
 
 interface NavbarProps {
   onToggleSidebar?: () => void;
+  onOpenGuide?: () => void;
+  isGuideOpen?: boolean;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar }) => {
+export const Navbar: React.FC<NavbarProps> = ({
+  onToggleSidebar,
+  onOpenGuide,
+  isGuideOpen = false,
+}) => {
   const {
     currentUser,
     availableUsers,
@@ -58,8 +65,24 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar }) => {
         </div>
       </div>
 
-      {/* Right side: Notifications, Role Switcher */}
-      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+      {/* Right side: User Guide, Notifications, Role Switcher */}
+      <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+        {onOpenGuide && (
+          <button
+            type="button"
+            onClick={onOpenGuide}
+            className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-2 rounded-xl border text-xs sm:text-[13px] font-bold transition-colors whitespace-nowrap min-h-[40px] ${
+              isGuideOpen
+                ? 'bg-teal-700 text-white border-teal-800 shadow-2xs'
+                : 'bg-teal-50/80 text-teal-800 border-teal-200 hover:bg-teal-100'
+            }`}
+          >
+            <BookOpen className="w-4 h-4 shrink-0" />
+            <span className="hidden sm:inline">Hướng dẫn sử dụng</span>
+            <span className="sm:hidden">Hướng dẫn</span>
+          </button>
+        )}
+
         {/* Notifications Popover */}
         <div className="relative">
           <button
